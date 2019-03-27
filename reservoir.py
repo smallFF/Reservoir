@@ -16,15 +16,14 @@ from scipy.integrate import odeint
 
 def lorenz(X, t, a, b, c):
     '''
-    a = p[0], b = p[1], c = p[2]
-    x = X[0], y = X[1], z = X[2]
+    X has the form: X =(x, y, z)
+    So we can use (x, y, z) = X to get x, y and z respectively!
     dx/dt = a*(y - x)
     dy/dt = x*(b - z) - y
     dz/dt = x*y - c*z
     
     '''
     
-    # a = p[0], b = p[1], c = p[2]
     (x, y, z) = X
     dx = a*(y - x)
     dy = x*(b - z) - y
