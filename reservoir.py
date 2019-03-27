@@ -12,6 +12,28 @@ import datetime
 from multiprocessing.dummy import Pool as ThreadPool
 import matplotlib.pyplot as plt
 
+from scipy.integrate import odeint
+
+def lorenz(X, t, a, b, c):
+    '''
+    a = p[0], b = p[1], c = p[2]
+    x = X[0], y = X[1], z = X[2]
+    dx/dt = a*(y - x)
+    dy/dt = x*(b - z) - y
+    dz/dt = x*y - c*z
+    
+    '''
+    
+    # a = p[0], b = p[1], c = p[2]
+    (x, y, z) = X
+    dx = a*(y - x)
+    dy = x*(b - z) - y
+    dz = x*y - c*z
+    
+    return np.array([dx, dy, dz])
+t = np.linspace(0,20, 10000)
+lorenz_states = odeint(lorenz, (0, 1, 0), t, args = (10, 28, 3))
+
 # if config file not exists, use this default config
 default_config = """{
   "input": {
@@ -151,7 +173,7 @@ class Reservoir:
         plt.title(config["input"]["functions"][i])
         plt.legend(loc = 'upper right')
         # plt.savefig('N = ' + str(self.N), dpi = 300)
-      plt.show()
+      plt.show() 
     
     def run(self):
         with open('reservoir.output', 'a') as output:

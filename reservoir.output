@@ -69,3 +69,162 @@ N = 94, D = 9.695359714832659, RMS = 1.484130821800565e-04
 N = 96, D = 9.797958971132712, RMS = 5.008896449014670e-05
 N = 98, D = 9.899494936611665, RMS = 5.502875268616181e-04
 N = 100, D = 10.000000000000000, RMS = 8.280932622557327e-05
+# 2019-03-25 18:11:32.762418
+{
+    "input": {
+        "nodes": 2,
+        "functions": [
+            "lambda x: np.sin(128 * np.pi * x)",
+            "lambda x: x"
+        ],
+        "length": 5000
+    },
+    "reservoir": {
+        "start_node": 100,
+        "end_node": 100,
+        "step": 1,
+        "degree_function": "lambda x: np.sqrt(x)",
+        "sigma": 0.5,
+        "bias": 1,
+        "leakage_rate": 0.3,
+        "regression_parameter": 1e-08
+    },
+    "output": {
+        "nodes": 2
+    },
+    "training": {
+        "init": 1000,
+        "train": 3000,
+        "test": 2000,
+        "error": 1000
+    }
+}
+N = 100, D = 10.000000000000000, RMS = 1.156645774440400e-03
+# 2019-03-27 10:30:21.657122
+{
+    "input": {
+        "nodes": 2,
+        "functions": [
+            "lambda x: np.sin(128 * np.pi * x)",
+            "lambda x: x"
+        ],
+        "length": 5000
+    },
+    "reservoir": {
+        "start_node": 95,
+        "end_node": 100,
+        "step": 2,
+        "degree_function": "lambda x: np.sqrt(x)",
+        "sigma": 0.5,
+        "bias": 1,
+        "leakage_rate": 0.3,
+        "regression_parameter": 1e-08
+    },
+    "output": {
+        "nodes": 2
+    },
+    "training": {
+        "init": 1000,
+        "train": 3000,
+        "test": 2000,
+        "error": 1000
+    }
+}
+N = 95, D = 9.746794344808963, RMS = 3.186420896583928e-06
+N = 97, D = 9.848857801796104, RMS = 3.172074189100812e-04
+N = 99, D = 9.949874371066199, RMS = 6.777400754140568e-06
+# 2019-03-27 11:12:43.835129
+{
+    "input": {
+        "nodes": 3,
+        "functions": [
+            "lambda x: lorenz_states[:,0]",
+            "lambda x: lorenz_states[:,1]",
+            "lambda x: lorenz_states[:,2]"
+        ],
+        "length": 10000
+    },
+    "reservoir": {
+        "start_node": 400,
+        "end_node": 400,
+        "step": 1,
+        "degree_function": "lambda x: np.sqrt(x)",
+        "sigma": 0.5,
+        "bias": 1,
+        "leakage_rate": 1.0,
+        "regression_parameter": 1e-07
+    },
+    "output": {
+        "nodes": 1
+    },
+    "training": {
+        "init": 500,
+        "train": 4000,
+        "test": 1000,
+        "error": 500
+    }
+}
+# 2019-03-27 11:15:46.161458
+{
+    "input": {
+        "nodes": 3,
+        "functions": [
+            "lambda x: lorenz_states[:,0]",
+            "lambda x: lorenz_states[:,1]",
+            "lambda x: lorenz_states[:,2]"
+        ],
+        "length": 10000
+    },
+    "reservoir": {
+        "start_node": 400,
+        "end_node": 400,
+        "step": 1,
+        "degree_function": "lambda x: np.sqrt(x)",
+        "sigma": 0.5,
+        "bias": 1,
+        "leakage_rate": 1.0,
+        "regression_parameter": 1e-07
+    },
+    "output": {
+        "nodes": 1
+    },
+    "training": {
+        "init": 500,
+        "train": 4000,
+        "test": 1000,
+        "error": 500
+    }
+}
+# 2019-03-27 11:19:30.542343
+{
+    "input": {
+        "nodes": 1,
+        "functions": [
+            "lambda x: lorenz_states[:,0]"
+        ],
+        "length": 10000
+    },
+    "reservoir": {
+        "start_node": 400,
+        "end_node": 400,
+        "step": 1,
+        "degree_function": "lambda x: np.sqrt(x)",
+        "sigma": 0.5,
+        "bias": 1,
+        "leakage_rate": 1.0,
+        "regression_parameter": 1e-08
+    },
+    "output": {
+        "nodes": 2,
+        "functions": [
+            "lambda x: lorenz_states[:,1]",
+            "lambda x: lorenz_states[:,2]"
+        ]
+    },
+    "training": {
+        "init": 500,
+        "train": 4000,
+        "test": 1000,
+        "error": 500
+    }
+}
