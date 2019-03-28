@@ -83,10 +83,11 @@ class MyReservoir:
         # dataset.append(self.input_func(
         #         np.arange(self.input_len) / self.input_len))
         # self.dataset = lorenz_states[:,0]
-        # print(dataset[1])
-        self.dataset_in = np.array(lorenz_states[:,0])  # shape = (length , M)
-        self.dataset_out = np.array(lorenz_states[:,1])
-        # print(self.dataset.shape)
+        print(dataset[1])
+        self.dataset_in = np.vstack(lorenz_states[:,0]) # shape = (length , M)
+        self.dataset_out = np.vstack(lorenz_states[:,1])
+        print("dataset_in.shape = ", self.dataset_in.shape)
+        print("dataset_out.shape = ", self.dataset_out.shape)
 
         # Reservoir layer
         self.N = 400   # 存储层节点个数
@@ -108,12 +109,16 @@ class MyReservoir:
 
 
     def train(self):
-        # 收集 reservoir state vectors  size = (N, train_len_len)
+        # 收集 reservoir state vectors  size = (N, train_len - init_len)
         self.r = np.zeros(
             (self.N, self.train_len - self.init_len))
-        # 收集 input and output signals   size = (train_len - init_len, 1) 可改动
-        self.u = np.vstack((self.dataset_in[i] for i in range(self.init_len, self.train_len))) 
-        self.s = np.vstack((self.dataset_out[i] for i in range(self.init_len, self.train_len))) 
+        print("self.r.shape = ", self.r.shape)
+        # 收集 input signals   size = (train_len - init_len, M) 可改动
+        self.u = np.vstack([self.dataset_in[i] for i in range(self.init_len, self.train_len)]) 
+        print("self.u.shape = ", self.u.shape)
+        # 收集 output signals   size = (P,train_len - init_len) 可改动
+        self.s = np.array([self.dataset_out[i] for i in range(self.init_len, self.train_len)]).T
+        print("self.s.shape = ", self.s.shape)
         
         # 设置随机数种子
         np.random.seed(42)
@@ -133,45 +138,84 @@ class MyReservoir:
         self.W *= 1.25 / self.rho
 
         # run the reservoir with the data and collect r
-        uu = np.vstack(self.dataset_in[t])
-        rr = self.r[:,0]
+        uu = np.vstack(self.dataset_in[0])
+        print(uu)
+        rr = np.vstack(self.r[:,0])
+        print("rr.shape = ", rr.shape)
         for t in range(self.train_len):    
             # r(t + \Delta t) = (1 - alpha)r(t) + alpha * tanh(A * r(t) + Win * u(t) + bias)
-            rr = (1 - self.alpha) * self.rr + self.alpha * 
-                np.tanh(np.dot(self.W, self.rr) + 
+            
+            # term1 = (1 - self.alpha) * rr
+            # print("term1.shape = ", term1.shape) 
+            # term2 = self.alpha * \
+            #     np.tanh(np.dot(self.W, rr) + \
+            #     np.dot(self.Win, uu) + self.bias*np.ones((self.N, 1)))
+            # print("term2.shape = ",term2.shape)
+
+            rr = (1 - self.alpha) * rr + self.alpha * \
+                np.tanh(np.dot(self.W, rr) + \
                 np.dot(self.Win, uu) + self.bias*np.ones((self.N, 1)))
+            # print("rr_new.shape = ", rr.shape)
             if t >= self.init_len:
-                self.r[:, [t - self.init_len]
-                       ] = self.rr
+                self.r[:, [t - self.init_len]] = rr
+
         # train the output
-        
         # Wout = (s * r^T) * ((r * r^T) + beta * I)
-        self.Wout = np.dot(np.dot(self.S, R_T), np.linalg.inv(
-            np.dot(self.R, R_T) + self.beta * np.eye(self.M + self.N + 1)))
+        # 得到s_mean 和 r_mean
+        s_mean = 0
+        r_mean = 0
+        
+        for i in range(self.init_len, self.train_len):
+          s_mean += self.s[:,[i-self.init_len]]
+          r_mean += self.r[:,[i-self.init_len]]
+        s_mean /= self.train_len
+        r_mean /= self.train_len
+        # print("s_mean = ", s_mean)
+        # print("r_mean = ", r_mean)
+
+        delta_s = np.zeros(self.s.shape)
+        delta_r = np.zeros(self.r.shape)
+        print("delta_s.shape = ", delta_s.shape)
+        print("delta_r.shape = ", delta_r.shape)
+        for i in range(self.train_len - self.init_len):
+          delta_s[:, [i]]= self.s[:, [i]] - s_mean
+          delta_r[:, [i]] = self.r[:, [i]] - r_mean
+          # print(delta_r[:,[i]])
+
+        # delta_s = np.array(delta_s)
+        # delta_r = np.array(delta_r)
+
+        self.Wout = np.dot(np.dot(delta_s, delta_r.T), np.linalg.inv(
+            np.dot(delta_r, delta_r.T) + self.beta * np.eye(self.N )))
+        self.C = -(np.dot(self.Wout, r_mean) - s_mean)
 
     def _run(self):
         # run the trained ESN in alpha generative mode. no need to initialize here,
         # because r is initialized with training data and we continue from there.
         self.S = np.zeros((self.P, self.test_len))
-        u = np.vstack((x[self.train_len] for x in self.dataset))
+        uu = np.vstack(self.dataset_in[self.train_len])
+        rr = self.r[:,[self.train_len-self.init_len -1]]
         for t in range(self.test_len):
             # r(t + \Delta t) = (1 - alpha)r(t) + alpha * tanh(A * r(t) + Win * u(t) + bias)
-            self.r = (1 - self.alpha) * self.r + self.alpha * np.tanh(np.dot(self.A,
-                                                                             self.r) + np.dot(self.Win, np.vstack((self.bias, u))))
-            s = np.dot(self.Wout, np.vstack((self.bias, u, self.r)))
-            self.S[:, t] = np.squeeze(np.asarray(s))
-            # use output as input
-            u = s
+            # rr = (1 - self.alpha) * rr + self.alpha * np.tanh(np.dot(self.A,
+            #                                                                  self.r) + np.dot(self.Win, np.vstack((self.bias, u))))
+            rr = (1 - self.alpha) * rr + self.alpha * \
+                np.tanh(np.dot(self.W, rr) + \
+                np.dot(self.Win, uu) + self.bias*np.ones((self.N, 1)))
 
+
+            s = np.dot(self.Wout, rr) + self.C
+            self.S[:, [t]] = np.squeeze(np.asarray(s))
+            # use output as input
+            uu = s
+        print(self.S)
     def draw(self):
       plt.subplots(1, self.M)
       plt.suptitle('N = ' + str(self.N) + ', Degree = %.5f' % (self.D))
-      for i in range(self.M):
-        ax = plt.subplot(1, self.M, i + 1)
-        plt.plot(self.S[i], label = 'prediction')
-       # plt.plot(self.dataset[i][self.train_len + 1 : self.train_len + self.test_len + 1], label = 'input signal')
-        plt.legend(loc = 'upper right')
-        # plt.savefig('N = ' + str(self.N), dpi = 300)
+      plt.plot(self.S[0], label = 'prediction')
+      plt.plot(self.dataset_out[self.train_len: self.train_len + self.test_len], label = 'true output signal')
+      plt.legend(loc = 'upper right')
+      # plt.savefig('N = ' + str(self.N), dpi = 300)
       plt.show()
     
     def run(self):
@@ -180,13 +224,13 @@ class MyReservoir:
         self.draw()
 
 
-# Invoke automatically when exit, write the progress back to config file
-def exit_handler():
-    global config
-    with open('reservoir.config', 'w') as config_file:
-        config_file.write(json.dumps(config, indent = 4))
-    print('Program finished! Current node = ' +
-          str(config["reservoir"]["start_node"]))
+# # Invoke automatically when exit, write the progress back to config file
+# def exit_handler():
+#     global config
+#     with open('reservoir.config', 'w') as config_file:
+#         config_file.write(json.dumps(config, indent = 4))
+#     print('Program finished! Current node = ' +
+#           str(config["reservoir"]["start_node"]))
 
 
 if __name__ == '__main__':
