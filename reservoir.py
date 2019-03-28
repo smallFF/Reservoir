@@ -87,7 +87,8 @@ class Reservoir:
             dataset.append(self.input_func[i](
                 np.arange(self.input_len) / self.input_len))
         self.dataset = np.array(list(zip(*dataset))).T # shape = (M, length)
-
+        print(self.dataset)
+        
         # Reservoir layer
         self.start_node = config["reservoir"]["start_node"]
         self.N = self.start_node
@@ -104,8 +105,11 @@ class Reservoir:
         self.P = config["output"]["nodes"]
 
         # Training relevant
+        # 用前面一些点初始化储备池，以便形成良好回声再开始训练
         self.init_len = config["training"]["init"]
+        # 训练所用数据长度
         self.train_len = config["training"]["train"]
+        # 测试所用数据长度
         self.test_len = config["training"]["test"]
         self.error_len = config["training"]["error"]
 
@@ -114,12 +118,18 @@ class Reservoir:
         # collection of reservoir state vectors
         self.R = np.zeros(
             (1 + self.N + self.M, self.train_len - self.init_len))
+        
         # collection of input signals
+        # self.S 表示输入信号
         self.S = np.vstack((x[self.init_len + 1: self.train_len + 1] for x in self.dataset))
         self.r = np.zeros((self.N, 1))
         np.random.seed(42)
+        
+        #self.Win 表示输入层与存储层权重矩阵
         self.Win = np.random.uniform(-self.sigma,
                                      self.sigma, (self.N, self.M + 1))
+        # print(self.Win)
+        
         # TODO: the values of non-zero elements are randomly drawn from uniform dist [-1, 1]
         g = nx.erdos_renyi_graph(self.N, self.D / self.N, 42, True)
         # nx.draw(g, node_size=self.N)
@@ -131,6 +141,7 @@ class Reservoir:
         for t in range(self.train_len):
             u = np.vstack((x[t] for x in self.dataset))
             # r(t + \Delta t) = (1 - alpha)r(t) + alpha * tanh(A * r(t) + Win * u(t) + bias)
+            # 在这里做了一些改动
             self.r = (1 - self.alpha) * self.r + self.alpha * np.tanh(np.dot(self.A,
                                                                              self.r) + np.dot(self.Win, np.vstack((self.bias, u))))
             if t >= self.init_len:
@@ -139,8 +150,9 @@ class Reservoir:
         # train the output
         R_T = self.R.T  # Transpose
         # Wout = (s * r^T) * ((r * r^T) + beta * I)
+
         self.Wout = np.dot(np.dot(self.S, R_T), np.linalg.inv(
-            np.dot(self.R, R_T) + self.beta * np.eye(self.M + self.N + 1)))
+            np.dot(self.R, R_T) + self.beta * np.eye(self.M + self.N + 1 )))
 
     def _run(self):
         # run the trained ESN in alpha generative mode. no need to initialize here,
@@ -167,8 +179,8 @@ class Reservoir:
       for i in range(self.M):
         ax = plt.subplot(1, self.M, i + 1)
         plt.text(0.5, -0.1, 'RMS = %.15e' % self.RMS[i], size=10, ha="center", transform=ax.transAxes)
-        plt.plot(self.S[i], label = 'prediction')
-        plt.plot(self.dataset[i][self.train_len + 1 : self.train_len + self.test_len + 1], label = 'input signal')
+        plt.plot(t[self.train_len+1: self.train_len + self.test_len + 1],self.S[i], label = 'prediction')
+        plt.plot(t[self.train_len+1: self.train_len + self.test_len + 1],self.dataset[i][self.train_len + 1 : self.train_len + self.test_len + 1], label = 'input signal')
         plt.title(config["input"]["functions"][i])
         plt.legend(loc = 'upper right')
         # plt.savefig('N = ' + str(self.N), dpi = 300)
