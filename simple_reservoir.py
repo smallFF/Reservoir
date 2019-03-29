@@ -37,6 +37,8 @@ def lorenz(X, t, a, b, c):
 t = np.linspace(0,20, 10000)
 lorenz_states = odeint(lorenz, (0, 1, 0), t, args = (10, 28, 3))
 
+lorenz_states = (lorenz_states - np.mean(lorenz_states,0)) / np.mean((lorenz_states - np.mean(lorenz_states,0))**2,0)**(1/2)    
+
 
 # if config file not exists, use this default config
 default_config = """{
@@ -93,18 +95,18 @@ class MyReservoir:
         self.N = 400   # 存储层节点个数
         self.degree_func = lambda x: np.sqrt(x)
         self.D = self.degree_func(self.N)
-        self.sigma = 0.5
+        self.sigma = 1
         self.bias = 1
-        self.alpha = 0.3      # leakage rate
+        self.alpha = 1      # leakage rate
         self.beta = 1e-07     # 岭回归参数
 
         # Output layer
         self.P = 1
 
         # Training relevant
-        self.init_len = 100
-        self.train_len = 3000
-        self.test_len = 1500
+        self.init_len = 0
+        self.train_len = 7000
+        self.test_len = 3000
         # self.error_len = config["training"]["error"]
 
 
@@ -113,8 +115,8 @@ class MyReservoir:
         self.r = np.zeros(
             (self.N, self.train_len - self.init_len))
         print("self.r.shape = ", self.r.shape)
-        # 收集 input signals   size = (train_len - init_len, M) 可改动
-        self.u = np.vstack([self.dataset_in[i] for i in range(self.init_len, self.train_len)]) 
+        # 收集 input signals   size = (M,train_len - init_len) 可改动
+        self.u = np.array([self.dataset_in[i] for i in range(self.init_len, self.train_len)]).T
         print("self.u.shape = ", self.u.shape)
         # 收集 output signals   size = (P,train_len - init_len) 可改动
         self.s = np.array([self.dataset_out[i] for i in range(self.init_len, self.train_len)]).T
@@ -133,13 +135,15 @@ class MyReservoir:
         # nx.draw(g, node_size=self.N)
 
         self.W = nx.adjacency_matrix(g).todense()
-        # spectral radius: rho
+        # spectral radius: rho  谱半径
         self.rho = max(abs(np.linalg.eig(self.W)[0]))
-        self.W *= 1.25 / self.rho
+        print("self.rho = ", self.rho)
+        self.W *= 1.0 / self.rho
 
         # run the reservoir with the data and collect r
         uu = np.vstack(self.dataset_in[0])
         print(uu)
+        print("uu.shape = ", uu.shape)
         rr = np.vstack(self.r[:,0])
         print("rr.shape = ", rr.shape)
         for t in range(self.train_len):    
@@ -151,7 +155,7 @@ class MyReservoir:
             #     np.tanh(np.dot(self.W, rr) + \
             #     np.dot(self.Win, uu) + self.bias*np.ones((self.N, 1)))
             # print("term2.shape = ",term2.shape)
-
+            uu = np.vstack(self.dataset_in[t])
             rr = (1 - self.alpha) * rr + self.alpha * \
                 np.tanh(np.dot(self.W, rr) + \
                 np.dot(self.Win, uu) + self.bias*np.ones((self.N, 1)))
@@ -194,11 +198,16 @@ class MyReservoir:
         # because r is initialized with training data and we continue from there.
         self.S = np.zeros((self.P, self.test_len))
         uu = np.vstack(self.dataset_in[self.train_len])
-        rr = self.r[:,[self.train_len-self.init_len -1]]
+
+        # 能直接使用前面的 r 吗？
+        # rr = self.r[:,[self.train_len-self.init_len -1]]
+        rr = np.zeros((self.N,1))
+        print("rr.shape = ", rr.shape)
         for t in range(self.test_len):
             # r(t + \Delta t) = (1 - alpha)r(t) + alpha * tanh(A * r(t) + Win * u(t) + bias)
             # rr = (1 - self.alpha) * rr + self.alpha * np.tanh(np.dot(self.A,
             #                                                                  self.r) + np.dot(self.Win, np.vstack((self.bias, u))))
+            uu = np.vstack(self.dataset_in[self.train_len + t])
             rr = (1 - self.alpha) * rr + self.alpha * \
                 np.tanh(np.dot(self.W, rr) + \
                 np.dot(self.Win, uu) + self.bias*np.ones((self.N, 1)))
@@ -207,13 +216,16 @@ class MyReservoir:
             s = np.dot(self.Wout, rr) + self.C
             self.S[:, [t]] = np.squeeze(np.asarray(s))
             # use output as input
-            uu = s
+            # 不能这么做
+            # uu = s
         print(self.S)
     def draw(self):
+      t = np.linspace(0, 20, self.input_len)
       plt.subplots(1, self.M)
       plt.suptitle('N = ' + str(self.N) + ', Degree = %.5f' % (self.D))
-      plt.plot(self.S[0], label = 'prediction')
-      plt.plot(self.dataset_out[self.train_len: self.train_len + self.test_len], label = 'true output signal')
+      plt.plot(t[self.train_len: self.train_len + self.test_len], self.S[0], label = 'prediction')
+      plt.plot(t[self.train_len: self.train_len + self.test_len],
+       self.dataset_out[self.train_len: self.train_len + self.test_len], label = 'true output signal')
       plt.legend(loc = 'upper right')
       # plt.savefig('N = ' + str(self.N), dpi = 300)
       plt.show()
