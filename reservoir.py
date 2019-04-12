@@ -1,5 +1,9 @@
-#! /usr/bin/env python3
-# -*- coding: utf-8
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Mar 28 16:12:44 2019
+
+@author: JF
+"""
 
 import numpy as np
 import networkx as nx
@@ -9,7 +13,7 @@ import os.path
 from decimal import Decimal
 from collections import OrderedDict
 import datetime
-from multiprocessing.dummy import Pool as ThreadPool
+# from multiprocessing.dummy import Pool as ThreadPool
 import matplotlib.pyplot as plt
 
 from scipy.integrate import odeint
@@ -28,194 +32,224 @@ def lorenz(X, t, a, b, c):
     dx = a*(y - x)
     dy = x*(b - z) - y
     dz = x*y - c*z
-    
     return np.array([dx, dy, dz])
-t = np.linspace(0,20, 10000)
-lorenz_states = odeint(lorenz, (0, 1, 0), t, args = (10, 28, 3))
 
-# if config file not exists, use this default config
-default_config = """{
-  "input": {
-    "nodes": 2,
-    "functions": 
-      [
-        "lambda x: np.sin(128 * np.pi * x)",
-        "lambda x: x"
-      ],
-    "length": 5000
-  },
-  "reservoir": {
-    "start_node": 95,
-    "end_node": 100,
-    "step": 2,
-    "degree_function": "lambda x: np.sqrt(x)",
-    "sigma": 0.5,
-    "bias": 1,
-    "leakage_rate": 0.3,
-    "regression_parameter": 1e-8
-  },
-  "output": {
-    "nodes": 2
-  },
-  "training": {
-    "init": 1000,
-    "train": 3000,
-    "test": 2000,
-    "error": 1000
-  }
-}"""
+def rossler(X, t, a, b, c):
+    (x, y, z) = X
+    dx = - y - z 
+    dy = x + a*y
+    dz = b + z*(x-c)
+    return np.array([dx, dy, dz])
+
+time = {'lorenz': np.arange(0, 50, 0.05), 'rossler':np.arange(0, 50, 0.05)}
+
+def model_states(model):
+    if model.__name__ in ('lorenz', 'rossler'):
+        # 时间参数
+        t = time[model.__name__]
+        # 生成模型需要的数据
+        if model.__name__ == 'lorenz':        
+            states = odeint(lorenz, (0.1, 0.1, 0.1), t, args = (10, 28, 8/3))
+        elif model.__name__ == 'rossler':
+            states = odeint(rossler, (1, 1, 1), t, args = (0.5, 2.0, 4.0))
+        # 对数据进行处理
+        states = (states - np.mean(states,0)) / np.mean((states - np.mean(states,0))**2,0)**(1/2)
+    else:
+        raise ValueError('Now noly \'lorenz\' model and \'rossler\' model are supported!')
+
+    return states
 
 
-class Reservoir:
-    def __init__(self):
-        config_file_name = 'reservoir.config'
-        global config
-        if os.path.isfile(config_file_name):
-            with open(config_file_name) as config_file:
-                config = json.load(config_file, object_pairs_hook=OrderedDict)
-        else:
-            config = json.loads(default_config, object_pairs_hook=OrderedDict)
-            print('Config file not exist, using default config instead!')
+class MyReservoir:
+    def __init__(self, model):
+        self.model = model
+        self.random_seed = 40
+
+        # 获取状态数据
+        states = np.array(model_states(model))
+        
+        self.input_len = len(states) # 输入长度
+        
+        self.dataset_in = states[:,[0]].T # shape = (M,lenght)
+        self.dataset_out = states[:,1:3].T # sh]ape = (P,lenght)
+#        print(self.dataset_in)
+#        print(self.dataset_out)
+        print("dataset_in.shape = ", self.dataset_in.shape)
+        print("dataset_out.shape = ", self.dataset_out.shape)
 
         # Input layer
-        self.M = config["input"]["nodes"]
-        self.input_len = config["input"]["length"]
-        self.input_func = []
-        dataset = []
-        for i in range(self.M):
-            self.input_func.append(eval(config["input"]["functions"][i]))
-            dataset.append(self.input_func[i](
-                np.arange(self.input_len) / self.input_len))
-        self.dataset = np.array(list(zip(*dataset))).T # shape = (M, length)
-        print(self.dataset)
+        self.M  = self.dataset_in.shape[0]   # 输入层节点
+          
+        # Output layer
+        self.P = self.dataset_out.shape[0]  # 输出层节点
         
         # Reservoir layer
-        self.start_node = config["reservoir"]["start_node"]
-        self.N = self.start_node
-        self.step = config["reservoir"]["step"]
-        self.end_node = config["reservoir"]["end_node"]
-        self.degree_func = eval(config["reservoir"]["degree_function"])
-        self.D = self.degree_func(self.start_node)
-        self.sigma = config["reservoir"]["sigma"]
-        self.bias = config["reservoir"]["bias"]
-        self.alpha = config["reservoir"]["leakage_rate"]
-        self.beta = config["reservoir"]["regression_parameter"]
+        self.N = 400   # 存储层节点个数
+        self.degree_func = lambda x: np.sqrt(x)
+        self.D = self.degree_func(self.N)
+        self.sigma = 1
+        self.bias = 1
+        self.alpha = 0.75   # leakage rate
+        self.beta = 1e-7    # 岭回归参数
 
-        # Output layer
-        self.P = config["output"]["nodes"]
-
-        # Training relevant
-        # 用前面一些点初始化储备池，以便形成良好回声再开始训练
-        self.init_len = config["training"]["init"]
-        # 训练所用数据长度
-        self.train_len = config["training"]["train"]
-        # 测试所用数据长度
-        self.test_len = config["training"]["test"]
-        self.error_len = config["training"]["error"]
+        # TODO: Training relevant 可以删除self.init_len 和 self.error_len
+        self.init_len = 0
+        self.train_len = int(0.7 * self.input_len)
+        self.test_len = 3000
+        # self.error_len = config["training"]["error"]
 
 
     def train(self):
-        # collection of reservoir state vectors
-        self.R = np.zeros(
-            (1 + self.N + self.M, self.train_len - self.init_len))
-        
-        # collection of input signals
-        # self.S 表示输入信号
-        self.S = np.vstack((x[self.init_len + 1: self.train_len + 1] for x in self.dataset))
-        self.r = np.zeros((self.N, 1))
-        np.random.seed(42)
-        
-        #self.Win 表示输入层与存储层权重矩阵
-        self.Win = np.random.uniform(-self.sigma,
-                                     self.sigma, (self.N, self.M + 1))
-        # print(self.Win)
-        
-        # TODO: the values of non-zero elements are randomly drawn from uniform dist [-1, 1]
-        g = nx.erdos_renyi_graph(self.N, self.D / self.N, 42, True)
-        # nx.draw(g, node_size=self.N)
-        self.A = nx.adjacency_matrix(g).todense()
-        # spectral radius: rho
-        self.rho = max(abs(np.linalg.eig(self.A)[0]))
-        self.A *= 1.25 / self.rho
-        # run the reservoir with the data and collect r
-        for t in range(self.train_len):
-            u = np.vstack((x[t] for x in self.dataset))
-            # r(t + \Delta t) = (1 - alpha)r(t) + alpha * tanh(A * r(t) + Win * u(t) + bias)
-            # 在这里做了一些改动
-            self.r = (1 - self.alpha) * self.r + self.alpha * np.tanh(np.dot(self.A,
-                                                                             self.r) + np.dot(self.Win, np.vstack((self.bias, u))))
-            if t >= self.init_len:
-                self.R[:, [t - self.init_len]
-                       ] = np.vstack((self.bias, u, self.r))[:, 0]
-        # train the output
-        R_T = self.R.T  # Transpose
-        # Wout = (s * r^T) * ((r * r^T) + beta * I)
+        # 收集 reservoir state vectors  size = (N, train_len - init_len)
+        self.r = np.zeros(
+            (self.N, self.train_len - self.init_len))
+        print("self.r.shape = ", self.r.shape)
 
-        self.Wout = np.dot(np.dot(self.S, R_T), np.linalg.inv(
-            np.dot(self.R, R_T) + self.beta * np.eye(self.M + self.N + 1 )))
+        # 收集 input signals   size = (M,train_len - init_len) 可改动
+        self.u = self.dataset_in[:,self.init_len: self.train_len]
+        print("self.u.shape = ", self.u.shape)
+
+        # 收集 output signals   size = (P,train_len - init_len) 可改动
+        self.s = self.dataset_out[:, self.init_len: self.train_len]
+        print("self.s.shape = ", self.s.shape)
+        
+        # 设置随机数种子
+        np.random.seed(self.random_seed)
+
+        # 初始化输入层与存储层权重矩阵
+        self.Win = np.random.uniform(-self.sigma, self.sigma, (self.N, self.M))
+        print("self.Win.shape = ",self.Win.shape)
+        
+        # 得到稀疏邻接矩阵 W  size = (N, N)
+        # TODO: the values of non-zero elements are randomly drawn from uniform dist [-1, 1]
+        g = nx.erdos_renyi_graph(self.N, self.D / self.N, self.random_seed, True)
+        # nx.draw(g, node_size=self.N)
+        self.W = nx.adjacency_matrix(g).todense()
+        print("self.W.shape = ",self.W.shape)
+
+        # spectral radius: rho  谱半径
+        self.rho = max(np.abs(np.linalg.eig(self.W)[0]))
+        print("self.rho = ", self.rho)
+        self.W *= 1.25 / self.rho
+
+        # run the reservoir with the data and collect r
+        uu = self.dataset_in[:,[0]]
+        print(uu)
+        print("uu.shape = ", uu.shape)
+        rr = self.r[:,[0]]
+        print("rr.shape = ", rr.shape)
+        for t in range(self.train_len):    
+            # r(t + \Delta t) = (1 - alpha)r(t) + alpha * tanh(A * r(t) + Win * u(t) + bias)
+            uu = self.dataset_in[:,[t]]
+            rr = (1 - self.alpha) * rr + self.alpha * \
+                np.tanh(np.dot(self.W, rr) + \
+                np.dot(self.Win, uu) + self.bias*np.ones((self.N, 1)))
+#            print("uu.shape = ", uu.shape)
+#            print("rr.shape = ", rr.shape)
+
+            if t >= self.init_len:
+                self.r[:, [t - self.init_len]] = rr
+
+        # train the output 
+        # Wout = (s * r^T) * ((r * r^T) + beta * I)  这个公式好像不太对
+
+        # 得到s_mean 和 r_mean
+        s_mean = 0
+        r_mean = 0
+        
+        for i in range(self.init_len, self.train_len):
+          s_mean += self.s[:,[i-self.init_len]]
+          r_mean += self.r[:,[i-self.init_len]]
+        s_mean /= self.train_len
+        r_mean /= self.train_len
+        # print("s_mean = ", s_mean)
+        # print("r_mean = ", r_mean)
+
+        delta_s = np.zeros(self.s.shape)
+        delta_r = np.zeros(self.r.shape)
+        print("delta_s.shape = ", delta_s.shape)
+        print("delta_r.shape = ", delta_r.shape)
+        for i in range(self.train_len - self.init_len):
+          delta_s[:, [i]]= self.s[:, [i]] - s_mean
+          delta_r[:, [i]] = self.r[:, [i]] - r_mean
+
+        self.Wout = np.dot(np.dot(delta_s, delta_r.T), np.linalg.inv(
+            np.dot(delta_r, delta_r.T) + self.beta * np.eye(self.N )))
+        self.C = -(np.dot(self.Wout, r_mean) - s_mean)
 
     def _run(self):
         # run the trained ESN in alpha generative mode. no need to initialize here,
         # because r is initialized with training data and we continue from there.
-        self.S = np.zeros((self.P, self.test_len))
-        u = np.vstack((x[self.train_len] for x in self.dataset))
-        for t in range(self.test_len):
+        # 我选择整个数据集
+        self.S = np.zeros((self.P, self.input_len))
+        uu = self.dataset_in[:,[0]]
+
+        # 能直接使用前面的 r 吗？
+        # TODO: 从这里开始错了啊 QAQ
+        # rr = self.r[:,[self.train_len-self.init_len -1]]
+        rr = np.zeros((self.N,1))
+        print("uu.shape = ", uu.shape)
+        print("rr.shape = ", rr.shape)
+        for t in range(self.input_len):
             # r(t + \Delta t) = (1 - alpha)r(t) + alpha * tanh(A * r(t) + Win * u(t) + bias)
-            self.r = (1 - self.alpha) * self.r + self.alpha * np.tanh(np.dot(self.A,
-                                                                             self.r) + np.dot(self.Win, np.vstack((self.bias, u))))
-            s = np.dot(self.Wout, np.vstack((self.bias, u, self.r)))
-            self.S[:, t] = np.squeeze(np.asarray(s))
+            # rr = (1 - self.alpha) * rr + self.alpha * np.tanh(np.dot(self.A,
+            #                                                                  self.r) + np.dot(self.Win, np.vstack((self.bias, u))))
+            
+        #    print("uu.shape = ", uu.shape)
+        #    print("rr.shape = ", rr.shape)
+            
+            uu = self.dataset_in[:,[t]]
+            rr = (1 - self.alpha) * rr + self.alpha * \
+                np.tanh(np.dot(self.W, rr) + \
+                np.dot(self.Win, uu) + self.bias*np.ones((self.N, 1)))
+            
+        #    print("uu.shape = ", uu.shape)
+        #    print("rr.shape = ", rr.shape)
+
+            s = np.dot(self.Wout, rr) + self.C
+            # print("s.shape = ", s.shape)
+            self.S[:, [t]] = s
             # use output as input
-            u = s
-        # compute Root Mean Square (RMS) error for the first self.error_len time steps
+            # 不能这么做
+            # uu = s
+        print(self.S)
+        print("self.S.shape = ", self.S.shape)
+
+        # 计算RMS error
         self.RMS = []
-        for i in range(self.P):
-          self.RMS.append(sum(np.square(
-            self.dataset[i, self.train_len+1: self.train_len+self.error_len+1] - self.S[i, 0: self.error_len])) / self.error_len)
+        for i in range(0, self.P):   
+            self.RMS.append(np.sqrt(np.sum((self.dataset_out[i] - self.S[i])**2/self.input_len)))
+        # print('RMS error = %s' % self.RMS)
 
     def draw(self):
-      plt.subplots(1, self.M)
-      plt.suptitle('N = ' + str(self.N) + ', Degree = %.5f' % (self.D))
-      for i in range(self.M):
-        ax = plt.subplot(1, self.M, i + 1)
-        plt.text(0.5, -0.1, 'RMS = %.15e' % self.RMS[i], size=10, ha="center", transform=ax.transAxes)
-        plt.plot(t[self.train_len+1: self.train_len + self.test_len + 1],self.S[i], label = 'prediction')
-        plt.plot(t[self.train_len+1: self.train_len + self.test_len + 1],self.dataset[i][self.train_len + 1 : self.train_len + self.test_len + 1], label = 'input signal')
-        plt.title(config["input"]["functions"][i])
-        plt.legend(loc = 'upper right')
-        # plt.savefig('N = ' + str(self.N), dpi = 300)
-      plt.show() 
+        # 根据模型获取时间数据
+        t = time[self.model.__name__]
+        
+        plt.subplots(self.P, 1)
+        plt.suptitle('N = ' + str(self.N) + ', Degree = %.5f' % (self.D))
+        plt.subplots_adjust(hspace = 1)
+        
+        for i in range(self.P):
+            ax = plt.subplot(self.P, 1, i + 1)
+            plt.text(0.5, -0.11, 'RMS error = %s' % self.RMS[i], size = 10, ha = 'center', transform = ax.transAxes)
+            plt.plot(t, self.dataset_out[i], ls = '-', label = 'true output signal')
+            plt.plot(t, self.S[i], ls = '--', label = 'prediction')
+            plt.legend(loc = 'upper right')
+        plt.savefig('N = ' + str(self.N) + '.png', dpi = 600)
+        plt.show()
+        
+      
     
     def run(self):
-        with open('reservoir.output', 'a') as output:
-            prompt = '# ' + str(datetime.datetime.now()) + \
-                '\n' + json.dumps(config, indent=4) + '\n'
-            print(prompt, end='')
-            output.write(prompt)
-            for i in range(self.start_node, self.end_node + 1, self.step):
-                self.N = i
-                self.D = self.degree_func(self.N)
-                self.train()
-                self._run()
-                for j in range(1):
-                  res = 'N = ' + str(self.N) + ', D = ' + '%.15f' % self.D + \
-                      ', RMS = ' + '%.15e' % Decimal(self.RMS[j]) + '\n'
-                  print(res, end='')
-                output.write(res)
-                config["reservoir"]["start_node"] = i
-                self.draw()
-
-
-# Invoke automatically when exit, write the progress back to config file
-def exit_handler():
-    global config
-    with open('reservoir.config', 'w') as config_file:
-        config_file.write(json.dumps(config, indent = 4))
-    print('Program finished! Current node = ' +
-          str(config["reservoir"]["start_node"]))
-
+        self.train()
+        self._run()
+        self.draw()
 
 if __name__ == '__main__':
-    atexit.register(exit_handler)
-    r = Reservoir()
+    # 目前模型的选择只有两个，分别是 lorenz 和 rossler.
+    r = MyReservoir(model = lorenz)
     r.run()
+
+
+
+    
