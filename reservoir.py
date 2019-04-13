@@ -8,65 +8,172 @@ Created on Thu Mar 28 16:12:44 2019
 import numpy as np
 import networkx as nx
 import json
-import atexit
-import os.path
-from decimal import Decimal
-from collections import OrderedDict
-import datetime
+# import atexit
+# import os.path
+# from decimal import Decimal
+# from collections import OrderedDict
+# import datetime
 # from multiprocessing.dummy import Pool as ThreadPool
 import matplotlib.pyplot as plt
-
 from scipy.integrate import odeint
 
-def lorenz(X, t, a, b, c):
-    '''
-    X has the form: X =(x, y, z)
-    So we can use (x, y, z) = X to get x, y and z respectively!
-    dx/dt = a*(y - x)
-    dy/dt = x*(b - z) - y
-    dz/dt = x*y - c*z
+# def lorenz(X, t, a, b, c):
+#     '''
+#     X has the form: X =(x, y, z)
+#     So we can use (x, y, z) = X to get x, y and z respectively!
+#     dx/dt = a*(y - x)
+#     dy/dt = x*(b - z) - y
+#     dz/dt = x*y - c*z
     
-    '''
+#     '''
     
-    (x, y, z) = X
-    dx = a*(y - x)
-    dy = x*(b - z) - y
-    dz = x*y - c*z
-    return np.array([dx, dy, dz])
+#     (x, y, z) = X
+#     dx = a*(y - x)
+#     dy = x*(b - z) - y
+#     dz = x*y - c*z
+#     return np.array([dx, dy, dz])
 
-def rossler(X, t, a, b, c):
-    (x, y, z) = X
-    dx = - y - z 
-    dy = x + a*y
-    dz = b + z*(x-c)
-    return np.array([dx, dy, dz])
+# def rossler(X, t, a, b, c):
+#     (x, y, z) = X
+#     dx = - y - z 
+#     dy = x + a*y
+#     dz = b + z*(x-c)
+#     return np.array([dx, dy, dz])
 
-time = {'lorenz': np.arange(0, 50, 0.05), 'rossler':np.arange(0, 50, 0.05)}
+# time = {'lorenz': np.arange(0, 50, 0.05), 'rossler':np.arange(0, 50, 0.05)}
 
-def model_states(model):
-    if model.__name__ in ('lorenz', 'rossler'):
-        # 时间参数
-        t = time[model.__name__]
-        # 生成模型需要的数据
-        if model.__name__ == 'lorenz':        
-            states = odeint(lorenz, (0.1, 0.1, 0.1), t, args = (10, 28, 8/3))
-        elif model.__name__ == 'rossler':
-            states = odeint(rossler, (1, 1, 1), t, args = (0.5, 2.0, 4.0))
-        # 对数据进行处理
-        states = (states - np.mean(states,0)) / np.mean((states - np.mean(states,0))**2,0)**(1/2)
-    else:
-        raise ValueError('Now noly \'lorenz\' model and \'rossler\' model are supported!')
+# def model_states(model):
+#     if model.__name__ in ('lorenz', 'rossler'):
+#         # 时间参数
+#         t = time[model.__name__]
+#         # 生成模型需要的数据
+#         if model.__name__ == 'lorenz':        
+#             states = odeint(lorenz, (0.1, 0.1, 0.1), t, args = (10, 28, 8/3))
+#         elif model.__name__ == 'rossler':
+#             states = odeint(rossler, (1, 1, 1), t, args = (0.5, 2.0, 4.0))
+#         # 对数据进行处理
+#         states = (states - np.mean(states,0)) / np.mean((states - np.mean(states,0))**2,0)**(1/2)
+#     else:
+#         raise ValueError('Now noly \'lorenz\' model and \'rossler\' model are supported!')
 
-    return states
+#     return states
+
+class Model:
+    '''
+    生成实例有三个属性：name, model, states
+    name:   字符串格式
+    model:  字典格式，里面存储模型所需要个各种参数
+    states: np.array格式， shape = (length, n)
+    '''
+    def __init__(self, name):
+        if name not in ('lorenz', 'rossler'):
+            raise ValueError('Now noly \'lorenz\' model and \'rossler\' model are supported!')
+        else:
+            # TODO: 现在只能分别设置时间和其他参数，下面时间格式为 t = np.arange(T0, T, delta_t)，后续待改进
+            self.__time ={'lorenz' :{'T0' : 0, 'T' : 50, 'delta_t' : 0.05},
+                         'rossler' :{'T0' : 0, 'T' : 260, 'delta_t' : 0.01}}
+            model_list = {
+                'lorenz' : {
+                    'init_value' : (0.1, 0.1, 0.1),
+                    't' : np.arange(self.__time[name]['T0'], self.__time[name]['T'], self.__time[name]['delta_t']),
+                    'args' : (10, 28, 8/3),
+                    'func' : self.__lorenz,
+                    'N' : 400,
+                    'rho' : 1.25,
+                    'sigma': 1.0,
+                    'bias' : 1.0,
+                    'alpha' : 0.94,
+                    'beta' : 1e-7,
+                    'T0' : self.__time[name]['T0'],
+                    'T' : self.__time[name]['T'],
+                    'delta_t' : self.__time[name]['delta_t']
+                },
+                'rossler' : {
+                    'init_value' : (0.2, 1.0, -0.8),
+                    't' : np.arange(self.__time[name]['T0'], self.__time[name]['T'], self.__time[name]['delta_t']),
+                    'args' : (0.5, 2.0, 4.0),
+                    'func' : self.__rossler,
+                    'N' : 1000,
+                    'rho' : 1.0,
+                    'sigma': 1.0,
+                    'bias' : 1.0,
+                    'alpha' : 1.0,
+                    'beta' : 1e-8,
+                    'T0' : self.__time[name]['T0'],
+                    'T' : self.__time[name]['T'],
+                    'delta_t' : self.__time[name]['delta_t']
+                }
+            }
+            self.name = name
+            self.model = model_list[name]
+            states = np.array(odeint(self.model['func'], self.model['init_value'], self.model['t'], args = self.model['args']))
+            states = (states - np.mean(states,0)) / np.mean((states - np.mean(states,0))**2,0)**(1/2)
+            self.states = states
+
+    # lorenz系统
+    def __lorenz(self, X, t, a, b, c):
+        '''
+        X has the form: X =(x, y, z)
+        So we can use (x, y, z) = X to get x, y and z respectively!
+        dx/dt = a*(y - x)
+        dy/dt = x*(b - z) - y
+        dz/dt = x*y - c*z
+        '''
+        (x, y, z) = X
+        dx = a*(y - x)
+        dy = x*(b - z) - y
+        dz = x*y - c*z
+        return np.array([dx, dy, dz])
+    
+    # rossler系统
+    def __rossler(self, X, t, a, b, c):
+        '''
+        X has the form: X =(x, y, z)
+        So we can use (x, y, z) = X to get x, y and z respectively!
+        dx/dt = - y - z 
+        dy/dt = x + a*y
+        dz/dt = b + z*(x-c)
+        '''
+        (x, y, z) = X
+        dx = - y - z 
+        dy = x + a*y
+        dz = b + z*(x-c)
+        return np.array([dx, dy, dz]) 
+
+    def __str__(self):
+        name = self.name
+        t = self.__time
+        model_list = {
+            name : {
+                'init_value' : str(self.model['init_value']),
+                't' : 'np.arange(%s, %s ,%s)' % (t[name]['T0'], t[name]['T'], t[name]['delta_t']),
+                'args' : str(self.model['args']),
+                'func' : '__%s in class Model' % name,
+                'N' : str(self.model['N']),
+                'rho' : str(self.model['rho']),
+                'sigma': str(self.model['sigma']),
+                'bias' : str(self.model['bias']),
+                'alpha' : str(self.model['alpha']),
+                'beta' : str(self.model['beta']),
+                'T0' : str(self.model['T0']),
+                'T' : str(self.model['T']),
+                'delta_t' : str(self.model['delta_t'])
+            }
+        }
+        jsonDumpsIndentStr = json.dumps(model_list, indent = 2)
+        return jsonDumpsIndentStr
+    
+    __repr__ = __str__
 
 
-class MyReservoir:
-    def __init__(self, model):
-        self.model = model
-        self.random_seed = 40
+class Reservoir:
+    def __init__(self, Model):
+        self.model_name = Model.name
+        self.model = Model.model
+        self.random_seed = 42
 
         # 获取状态数据
-        states = np.array(model_states(model))
+        states = Model.states
         
         self.input_len = len(states) # 输入长度
         
@@ -84,22 +191,21 @@ class MyReservoir:
         self.P = self.dataset_out.shape[0]  # 输出层节点
         
         # Reservoir layer
-        self.N = 400   # 存储层节点个数
+        self.N = self.model['N']   # 存储层节点个数
         self.degree_func = lambda x: np.sqrt(x)
         self.D = self.degree_func(self.N)
-        self.sigma = 1
-        self.bias = 1
-        self.alpha = 0.75   # leakage rate
-        self.beta = 1e-7    # 岭回归参数
+        self.sigma = self.model['sigma']
+        self.bias = self.model['bias']
+        self.alpha = self.model['alpha']   # leakage rate
+        self.beta = self.model['beta']    # 岭回归参数
 
         # TODO: Training relevant 可以删除self.init_len 和 self.error_len
         self.init_len = 0
-        self.train_len = int(0.7 * self.input_len)
+        self.train_len = int(1 * self.input_len)
         self.test_len = 3000
         # self.error_len = config["training"]["error"]
 
-
-    def train(self):
+        # 初始化各种状态
         # 收集 reservoir state vectors  size = (N, train_len - init_len)
         self.r = np.zeros(
             (self.N, self.train_len - self.init_len))
@@ -130,8 +236,10 @@ class MyReservoir:
         # spectral radius: rho  谱半径
         self.rho = max(np.abs(np.linalg.eig(self.W)[0]))
         print("self.rho = ", self.rho)
-        self.W *= 1.25 / self.rho
+        self.W *= self.model['rho'] / self.rho
 
+
+    def train(self):
         # run the reservoir with the data and collect r
         uu = self.dataset_in[:,[0]]
         print(uu)
@@ -177,7 +285,7 @@ class MyReservoir:
             np.dot(delta_r, delta_r.T) + self.beta * np.eye(self.N )))
         self.C = -(np.dot(self.Wout, r_mean) - s_mean)
 
-    def _run(self):
+    def __run(self):
         # run the trained ESN in alpha generative mode. no need to initialize here,
         # because r is initialized with training data and we continue from there.
         # 我选择整个数据集
@@ -223,7 +331,7 @@ class MyReservoir:
 
     def draw(self):
         # 根据模型获取时间数据
-        t = time[self.model.__name__]
+        t = self.model['t']
         
         plt.subplots(self.P, 1)
         plt.suptitle('N = ' + str(self.N) + ', Degree = %.5f' % (self.D))
@@ -231,25 +339,33 @@ class MyReservoir:
         
         for i in range(self.P):
             ax = plt.subplot(self.P, 1, i + 1)
-            plt.text(0.5, -0.11, 'RMS error = %s' % self.RMS[i], size = 10, ha = 'center', transform = ax.transAxes)
+            plt.text(0.5, -0.3, 'RMS error = %s' % self.RMS[i], size = 10, ha = 'center', transform = ax.transAxes)
             plt.plot(t, self.dataset_out[i], ls = '-', label = 'true output signal')
             plt.plot(t, self.S[i], ls = '--', label = 'prediction')
             plt.legend(loc = 'upper right')
-        plt.savefig('N = ' + str(self.N) + '.png', dpi = 600)
-        plt.show()
-        
-      
+        plt.savefig('%s N = %s.png' % (self.model_name, self.N), dpi = 600)
+        # plt.show()
     
+    # 集训练、预测和绘图于一体
     def run(self):
         self.train()
-        self._run()
+        self.__run()
         self.draw()
 
+# 为了展示两个模型的结果，注释掉Reservoir类中draw函数的plt.show()功能，结果见生成的图片
+# TODO: 后续修改成可以一次生成4-5个系统的结果
 if __name__ == '__main__':
     # 目前模型的选择只有两个，分别是 lorenz 和 rossler.
-    r = MyReservoir(model = lorenz)
-    r.run()
+    model_1 = Model('lorenz')
+    print(model_1)
+    r1 = Reservoir(model_1)
+    r1.run()
 
+    model_2 = Model('rossler')
+    print(model_2)
+    r2 = Reservoir(model_2)
+    r2.run()
+    
 
 
     
