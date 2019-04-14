@@ -93,7 +93,7 @@ class Model:
                     't' : np.arange(self.__time[name]['T0'], self.__time[name]['T'], self.__time[name]['delta_t']),
                     'args' : (0.5, 2.0, 4.0),
                     'func' : self.__rossler,
-                    'N' : 1000,
+                    'N' : 400,
                     'rho' : 1.0,
                     'sigma': 1.0,
                     'bias' : 1.0,
@@ -246,7 +246,7 @@ class Reservoir:
         print("uu.shape = ", uu.shape)
         rr = self.r[:,[0]]
         print("rr.shape = ", rr.shape)
-        for t in range(self.train_len):    
+        for t in range(1, self.train_len):    
             # r(t + \Delta t) = (1 - alpha)r(t) + alpha * tanh(A * r(t) + Win * u(t) + bias)
             uu = self.dataset_in[:,[t]]
             rr = (1 - self.alpha) * rr + self.alpha * \
@@ -298,7 +298,7 @@ class Reservoir:
         rr = np.zeros((self.N,1))
         print("uu.shape = ", uu.shape)
         print("rr.shape = ", rr.shape)
-        for t in range(self.input_len):
+        for t in range(1, self.input_len):
             # r(t + \Delta t) = (1 - alpha)r(t) + alpha * tanh(A * r(t) + Win * u(t) + bias)
             # rr = (1 - self.alpha) * rr + self.alpha * np.tanh(np.dot(self.A,
             #                                                                  self.r) + np.dot(self.Win, np.vstack((self.bias, u))))
