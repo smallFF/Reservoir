@@ -201,7 +201,7 @@ class Reservoir:
 
         # TODO: Training relevant 可以删除self.init_len 和 self.error_len
         self.init_len = 0
-        self.train_len = int(1 * self.input_len)
+        self.train_len = int(0.5 * self.input_len)
         self.test_len = 3000
         # self.error_len = config["training"]["error"]
 
@@ -228,11 +228,13 @@ class Reservoir:
         
         # 得到稀疏邻接矩阵 W  size = (N, N)
         # TODO: the values of non-zero elements are randomly drawn from uniform dist [-1, 1]
-        g = nx.erdos_renyi_graph(self.N, self.D / self.N, self.random_seed, True)
-        # nx.draw(g, node_size=self.N)
-        self.W = nx.adjacency_matrix(g).todense()
-        print("self.W.shape = ",self.W.shape)
+        # g = nx.erdos_renyi_graph(self.N, self.D / self.N, self.random_seed, True)
+        # # nx.draw(g, node_size=self.N)
+        # self.W = nx.adjacency_matrix(g).todense()
+        # print("self.W.shape = ",self.W.shape)
 
+        self.W = np.random.uniform(-1, 1, (self.N, self.N))
+        
         # spectral radius: rho  谱半径
         self.rho = max(np.abs(np.linalg.eig(self.W)[0]))
         print("self.rho = ", self.rho)
@@ -246,7 +248,7 @@ class Reservoir:
         print("uu.shape = ", uu.shape)
         rr = self.r[:,[0]]
         print("rr.shape = ", rr.shape)
-        for t in range(1, self.train_len):    
+        for t in range(self.train_len):    
             # r(t + \Delta t) = (1 - alpha)r(t) + alpha * tanh(A * r(t) + Win * u(t) + bias)
             uu = self.dataset_in[:,[t]]
             rr = (1 - self.alpha) * rr + self.alpha * \
@@ -298,10 +300,10 @@ class Reservoir:
         rr = np.zeros((self.N,1))
         print("uu.shape = ", uu.shape)
         print("rr.shape = ", rr.shape)
-        for t in range(1, self.input_len):
+        for t in range(self.input_len):
             # r(t + \Delta t) = (1 - alpha)r(t) + alpha * tanh(A * r(t) + Win * u(t) + bias)
             # rr = (1 - self.alpha) * rr + self.alpha * np.tanh(np.dot(self.A,
-            #                                                                  self.r) + np.dot(self.Win, np.vstack((self.bias, u))))
+            #       self.r) + np.dot(self.Win, np.vstack((self.bias, u))))
             
         #    print("uu.shape = ", uu.shape)
         #    print("rr.shape = ", rr.shape)
@@ -334,7 +336,7 @@ class Reservoir:
         t = self.model['t']
         
         plt.subplots(self.P, 1)
-        plt.suptitle('N = ' + str(self.N) + ', Degree = %.5f' % (self.D))
+        plt.suptitle(self.model_name +', N = ' + str(self.N) + ', Degree = %.5f' % (self.D))
         plt.subplots_adjust(hspace = 1)
         
         for i in range(self.P):
