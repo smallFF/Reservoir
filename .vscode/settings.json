@@ -1,7 +1,0 @@
-{
-    "python.linting.pylintEnabled": true,
-    "python.pythonPath": "C:/Users/pc/Anaconda3/python.exe",
-    "python.linting.enabled": true,
-    "python.linting.pylintPath": "C:/Users/pc/Anaconda3/Scripts/pylint.exe",
-    "python.condaPath": "C:/Users/pc/Anaconda3/Scripts/conda.exe"
-}
