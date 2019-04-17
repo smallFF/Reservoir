@@ -288,7 +288,8 @@ class Reservoir:
         t = self.model['t']
         
         plt.subplots(self.P, 1)
-        plt.suptitle(self.model_name +', N = ' + str(self.N) + ', Degree = %.5f' % (self.D))
+        # plt.suptitle(self.model_name +', N = ' + str(self.N) + ', Degree = %.5f' % (self.D))
+        plt.suptitle(self.model_name +' N = ' + str(self.N))
         plt.subplots_adjust(hspace = 1)
         
         for i in range(self.P):
