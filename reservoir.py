@@ -30,8 +30,8 @@ class Model:
             raise ValueError('Now noly \'lorenz\' model and \'rossler\' model are supported!')
         else:
             # TODO: 现在只能分别设置时间和其他参数，下面时间格式为 t = np.arange(T0, T, delta_t)，后续待改进
-            self.__time ={'lorenz' :{'T0' : 0, 'T' : 50, 'delta_t' : 0.05},
-                         'rossler' :{'T0' : 0, 'T' : 260, 'delta_t' : 0.01}}
+            self.__time ={'lorenz' :{'T0' : 0, 'T' : 50, 'delta_t' : 0.001},
+                         'rossler' :{'T0' : 0, 'T' : 260, 'delta_t' : 0.001}}
             model_list = {
                 'lorenz' : {
                     'init_value' : (0.1, 0.1, 0.1),
@@ -289,7 +289,7 @@ class Reservoir:
         
         plt.subplots(self.P, 1)
         # plt.suptitle(self.model_name +', N = ' + str(self.N) + ', Degree = %.5f' % (self.D))
-        plt.suptitle(self.model_name +' N = ' + str(self.N))
+        plt.suptitle('%s N = %s dt = %s' %(self.model_name, str(self.N), self.model['delta_t']))
         plt.subplots_adjust(hspace = 1)
         
         for i in range(self.P):
@@ -298,7 +298,7 @@ class Reservoir:
             plt.plot(t, self.dataset_out[i], ls = '-', label = 'true output signal')
             plt.plot(t, self.S[i], ls = '--', label = 'prediction')
             plt.legend(loc = 'upper right')
-        plt.savefig('Python--%s N = %s.png' % (self.model_name, self.N), dpi = 600)
+        plt.savefig('Python--%s N = %s dt = %s.png' % (self.model_name, self.N, self.model['delta_t']), dpi = 600)
         plt.show()
     
     # 集训练、预测和绘图功能于一体

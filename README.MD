@@ -5,13 +5,31 @@ Code for reservoir computing.
 
 ## Python implementation
 
-- lorenz system N = 400
+### Lorens System
+- lorenz system N = 400 dt = 0.001
 
-<img src="./Python--lorenz N = 400.png" style = "height: 400px;"/>
+<img src="./Python--lorenz N = 400 dt = 0.001.png" style = "height: 400px;"/>
 
-- rossler system N = 400
+- lorenz system N = 400 dt = 0.01
 
-<img src="./Python--rossler N = 400.png" style = "height: 400px;"/>
+<img src="./Python--lorenz N = 400 dt = 0.01.png" style = "height: 400px;"/>
+
+- lorenz system N = 400 dt = 0.05
+
+<img src="./Python--lorenz N = 400 dt = 0.05.png" style = "height: 400px;"/>
+
+### Rossler System
+- rossler system N = 400 dt = 0.001
+
+<img src="./Python--rossler N = 400 dt = 0.001.png" style = "height: 400px;"/>
+
+- rossler system N = 400 dt = 0.01
+
+<img src="./Python--rossler N = 400 dt = 0.01.png" style = "height: 400px;"/>
+
+- rossler system N = 400 dt = 0.05
+
+<img src="./Python--rossler N = 400 dt = 0.05.png" style = "height: 400px;"/>
 
 
 ## Matlab implementation
