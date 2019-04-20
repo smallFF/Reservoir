@@ -40,6 +40,8 @@
 ## 执行提交
 - `git commit -m "Descriptions"` - 一般用于 `git add` 相关命令后，加入到暂存区了就执行提交操作，以便记录版本
 
+- `git commit --amend` - 修改上一条提交信息
+
 - **提交之前一定要用 `git add` 命令添加文件！！！**
 
 ## 查看提交历史
@@ -69,14 +71,20 @@
 - **这个操作只是删除了之前对项目操作的历史记录，不会删除我们的代码文件**
 
 ## 项目同步
-- `git push origin master` - 把本地代码推送到GitHub的代码仓库中
+- `git push -u origin master` - 把本地代码推送到GitHub的代码仓库中
+
+- `git push -u origin feature-A` - 把分支 `feature-A` 推送给远程仓库
 
 - `git pull origin master` - 把GitHub代码仓库中的代码拉取到本地
+
+- 'git pull origin feature-A' - 把GitHub代码仓库中的分支 `feature-A` 拉取到本地
 
 - 我一般是两台电脑轮流用，通过 `push` 和 `pull` 这两个操作，每次在一台电脑上工作完了就 `push` 到云端，等到另一台电脑上要继续工作时就 `pull` 一下，然后工作完了再`push` 到云端。就这样来回 `push` 和 `pull` 操作，代码完全同步，不需要用U盘来回拷代码，非常爽！！！
 
 ## 分支操作
 - `git branch` - 显示分支一览表
+
+- `git branch -a` - 同时显示本地仓库和远程仓库的分支信息
 
 - `git branch feature-A` - 创建名为 `feature-A` 的分支
 
@@ -84,5 +92,8 @@
 
 - `git checkout -b feature-A` - 创建并切换到名为 `feature-A` 的分支
 
+- `git merge --no-ff feature-A` - 先进入主分支 `git checkout master` , 然后使用此命令可以把分支 `feature-A` 合并到主分支
+
+- `git reset --hard id` - 回溯到指定的历史版本
 
 最后说一下，因为目前只是我自己工作，所以我用的最多的是[**项目同步**](##项目同步)的功能，后续根据需要可以学习更高级的Git功能！
