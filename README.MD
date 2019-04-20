@@ -3,6 +3,12 @@ Code for reservoir computing.
 
 <img src="imgs/Reservoir.png" style="height: 300px;"/>
 
+## Task list
+
+- [x] python implementation
+- [x] matlab implementation
+- [ ] Add some functions
+
 ## Python implementation
 
 ### Lorens System
