@@ -77,7 +77,7 @@
 
 - `git pull origin master` - 把GitHub代码仓库中的代码拉取到本地
 
-- 'git pull origin feature-A' - 把GitHub代码仓库中的分支 `feature-A` 拉取到本地
+- `git pull origin feature-A` - 把GitHub代码仓库中的分支 `feature-A` 拉取到本地
 
 - 我一般是两台电脑轮流用，通过 `push` 和 `pull` 这两个操作，每次在一台电脑上工作完了就 `push` 到云端，等到另一台电脑上要继续工作时就 `pull` 一下，然后工作完了再`push` 到云端。就这样来回 `push` 和 `pull` 操作，代码完全同步，不需要用U盘来回拷代码，非常爽！！！
 
