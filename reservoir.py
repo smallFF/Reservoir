@@ -16,6 +16,7 @@ import json
 # from multiprocessing.dummy import Pool as ThreadPool
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
+# from numba import jit
 
 
 class Model:
@@ -195,6 +196,7 @@ class Reservoir:
         # self.W = nx.adjacency_matrix(g).todense()
         # print("self.W.shape = ",self.W.shape)
 
+        self.W = np.random()
         self.W = np.random.uniform(-1, 1, (self.N, self.N))
         
         # spectral radius: rho  谱半径
