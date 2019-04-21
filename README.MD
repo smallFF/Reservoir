@@ -1,7 +1,9 @@
 # Reservoir
 Code for reservoir computing.
 
-<img src="imgs/Reservoir.png" style="height: 300px;"/>
+<img src="imgs/Reservoir-1.png" style="height: 300px;"/>
+
+<img src="imgs/Reservoir-2.png" style="height: 445px;"/>
 
 ## Task list
 
@@ -24,6 +26,10 @@ Code for reservoir computing.
 
 <img src="./Python--lorenz N = 400 dt = 0.05.png" style = "height: 400px;"/>
 
+- lorenz system N = 400 dt = 0.05 partial
+
+<img src="./Python--lorenz N = 400 dt = 0.05 partial.png" style = "height: 400px;"/>
+
 ### Rossler System
 - rossler system N = 400 dt = 0.001
 
@@ -37,6 +43,9 @@ Code for reservoir computing.
 
 <img src="./Python--rossler N = 400 dt = 0.05.png" style = "height: 400px;"/>
 
+- rossler system N = 400 dt = 0.05 partial
+
+<img src="./Python--rossler N = 400 dt = 0.05 partial.png" style = "height: 400px;"/>
 
 ## Matlab implementation
 
