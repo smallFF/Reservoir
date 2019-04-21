@@ -1,11 +1,10 @@
 # Byte-compiled / optimized / DLL files
-__pycache__/
+__pycache__
 *.py[cod]
 *$py.class
 .DS_Store
 .idea
 .vscode
-*.png
 
 # C extensions
 *.so
