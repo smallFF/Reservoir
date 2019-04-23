@@ -65,7 +65,6 @@ class Model:
             self.normalize = normalize
 
             fun_list = {'lorenz': self._lorenz, 'rossler': self._rossler}
-            T0, T, delta_t = self.t_config
 
             states = np.array(odeint(fun_list[name], self.init_value, self.t, args=self.args))
             if self.normalize:
