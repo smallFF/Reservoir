@@ -465,92 +465,100 @@ if __name__ == '__main__':
     rms_error = np.array(rms_error)
     plt.figure()
     plt.plot(rho_set, rms_error, 'bo', markersize=3)
-    plt.errorbar(rho_set, rms_error, yerr=rms_error*0.035)
+    plt.errorbar(rho_set, rms_error, yerr=rms_error*0.035, elinewidth=1, capsize=3)
     plt.xlabel(r'$\rho$', fontdict=fontdict)
     plt.ylabel('RMS error', fontdict=fontdict)
+    ax = plt.gca()
+    ax.yaxis.get_major_formatter().set_powerlimits((0,1))
     plt.show()
     
 
-    # # alpha optimal=0.22
-    # alpha_set = np.linspace(0.15, 0.5, 20)
-    # par_set = alpha_set
-    # xlabel = r'$\alpha$'
-    # rms_error = []
-    # for par in par_set:
-    #     model_1 = Model('rossler', init_value=(0.1, 0.2, -0.3), 
-    #                     t=(0, 260, 0.05), args=(0.5, 2.0, 4.0),
-    #                     N=400, rho=1.31,
-    #                     sigma=1.0, bias=1.0, alpha=par, 
-    #                     beta=1e-08, normalize=True)
-    #     # print(model_1)
-    #     input1 = model_1.states[:, [0]].T
-    #     output1 = model_1.states[:, [2]].T
-    #     r1 = Reservoir(input1, output1, model_1)
-    #     r1.train()
-    #     r1.predict(partial=True)
-    #     rms_error.append(r1.RMS_partial)
-    #     # plt.figure()
-    #     # r1.draw(partial=True)
-    # rms_error = np.array(rms_error)
-    # plt.figure()
-    # plt.plot(par_set, rms_error, 'bo', markersize=3)
-    # plt.errorbar(par_set, rms_error, yerr=rms_error*0.035)
-    # plt.xlabel(xlabel, fontdict=fontdict)
-    # plt.ylabel('RMS error', fontdict=fontdict)
-    # plt.show()
+    # alpha optimal=0.22
+    alpha_set = np.linspace(0.15, 0.5, 20)
+    par_set = alpha_set
+    xlabel = r'$\alpha$'
+    rms_error = []
+    for par in par_set:
+        model_1 = Model('rossler', init_value=(0.1, 0.2, -0.3), 
+                        t=(0, 260, 0.05), args=(0.5, 2.0, 4.0),
+                        N=400, rho=1.31,
+                        sigma=1.0, bias=1.0, alpha=par, 
+                        beta=1e-08, normalize=True)
+        # print(model_1)
+        input1 = model_1.states[:, [0]].T
+        output1 = model_1.states[:, [2]].T
+        r1 = Reservoir(input1, output1, model_1)
+        r1.train()
+        r1.predict(partial=True)
+        rms_error.append(r1.RMS_partial)
+        # plt.figure()
+        # r1.draw(partial=True)
+    rms_error = np.array(rms_error)
+    plt.figure()
+    plt.plot(par_set, rms_error, 'bo', markersize=3)
+    plt.errorbar(par_set, rms_error, yerr=rms_error*0.035, elinewidth=1, capsize=3)
+    plt.xlabel(xlabel, fontdict=fontdict)
+    plt.ylabel('RMS error', fontdict=fontdict)
+    ax = plt.gca()
+    ax.yaxis.get_major_formatter().set_powerlimits((0,1))
+    plt.show()
 
-    # # sigma optimal=0.51
-    # sigma_set = np.linspace(0.1, 1.2, 20)
-    # par_set = sigma_set
-    # xlabel = r'$\sigma$'
-    # rms_error = []
-    # for par in par_set:
-    #     model_1 = Model('rossler', init_value=(0.1, 0.2, -0.3), 
-    #                     t=(0, 260, 0.05), args=(0.5, 2.0, 4.0),
-    #                     N=400, rho=1.31,
-    #                     sigma=par, bias=1.0, alpha=0.22, 
-    #                     beta=1e-08, normalize=True)
-    #     # print(model_1)
-    #     input1 = model_1.states[:, [0]].T
-    #     output1 = model_1.states[:, [1]].T
-    #     r1 = Reservoir(input1, output1, model_1)
-    #     r1.train()
-    #     r1.predict(partial=True)
-    #     rms_error.append(r1.RMS_partial)
-    #     # plt.figure()
-    #     # r1.draw(partial=True)
-    # rms_error = np.array(rms_error)
-    # plt.figure()
-    # plt.plot(par_set, rms_error, 'bo', markersize=3)
-    # plt.errorbar(par_set, rms_error, yerr=rms_error*0.035)
-    # plt.xlabel(xlabel, fontdict=fontdict)
-    # plt.ylabel('RMS error', fontdict=fontdict)
-    # plt.show()
+    # sigma optimal=0.51
+    sigma_set = np.linspace(0.1, 1.2, 20)
+    par_set = sigma_set
+    xlabel = r'$\sigma$'
+    rms_error = []
+    for par in par_set:
+        model_1 = Model('rossler', init_value=(0.1, 0.2, -0.3), 
+                        t=(0, 260, 0.05), args=(0.5, 2.0, 4.0),
+                        N=400, rho=1.31,
+                        sigma=par, bias=1.0, alpha=0.22, 
+                        beta=1e-08, normalize=True)
+        # print(model_1)
+        input1 = model_1.states[:, [0]].T
+        output1 = model_1.states[:, [1]].T
+        r1 = Reservoir(input1, output1, model_1)
+        r1.train()
+        r1.predict(partial=True)
+        rms_error.append(r1.RMS_partial)
+        # plt.figure()
+        # r1.draw(partial=True)
+    rms_error = np.array(rms_error)
+    plt.figure()
+    plt.plot(par_set, rms_error, 'bo', markersize=3)
+    plt.errorbar(par_set, rms_error, yerr=rms_error*0.035, elinewidth=1, capsize=3)
+    plt.xlabel(xlabel, fontdict=fontdict)
+    plt.ylabel('RMS error', fontdict=fontdict)
+    ax = plt.gca()
+    ax.yaxis.get_major_formatter().set_powerlimits((0,1))
+    plt.show()
 
-    # # N optimal=400
-    # N_set = [50*i for i in range(1,10)]
-    # par_set = N_set
-    # xlabel = r'$N$'
-    # rms_error = []
-    # for par in par_set:
-    #     model_1 = Model('rossler', init_value=(0.1, 0.2, -0.3), 
-    #                     t=(0, 260, 0.05), args=(0.5, 2.0, 4.0),
-    #                     N=par, rho=1.31,
-    #                     sigma=0.51, bias=1.0, alpha=0.22, 
-    #                     beta=1e-08, normalize=True)
-    #     # print(model_1)
-    #     input1 = model_1.states[:, [0]].T
-    #     output1 = model_1.states[:, [2]].T
-    #     r1 = Reservoir(input1, output1, model_1)
-    #     r1.train()
-    #     r1.predict(partial=True)
-    #     rms_error.append(r1.RMS_partial)
-    #     # plt.figure()
-    #     # r1.draw(partial=True)
-    # rms_error = np.array(rms_error)
-    # plt.figure()
-    # plt.plot(par_set, rms_error, 'bo', markersize=3)
-    # plt.errorbar(par_set, rms_error, yerr=rms_error*0.035)
-    # plt.xlabel(xlabel, fontdict=fontdict)
-    # plt.ylabel('RMS error', fontdict=fontdict)
-    # plt.show()
+    # N optimal=400
+    N_set = [50*i for i in range(1,10)]
+    par_set = N_set
+    xlabel = r'$N$'
+    rms_error = []
+    for par in par_set:
+        model_1 = Model('rossler', init_value=(0.1, 0.2, -0.3), 
+                        t=(0, 260, 0.05), args=(0.5, 2.0, 4.0),
+                        N=par, rho=1.31,
+                        sigma=0.51, bias=1.0, alpha=0.22, 
+                        beta=1e-08, normalize=True)
+        # print(model_1)
+        input1 = model_1.states[:, [0]].T
+        output1 = model_1.states[:, [2]].T
+        r1 = Reservoir(input1, output1, model_1)
+        r1.train()
+        r1.predict(partial=True)
+        rms_error.append(r1.RMS_partial)
+        # plt.figure()
+        # r1.draw(partial=True)
+    rms_error = np.array(rms_error)
+    plt.figure()
+    plt.plot(par_set, rms_error, 'bo', markersize=3)
+    plt.errorbar(par_set, rms_error, yerr=rms_error*0.035, elinewidth=1, capsize=3)
+    plt.xlabel(xlabel, fontdict=fontdict)
+    plt.ylabel('RMS error', fontdict=fontdict)
+    ax = plt.gca()
+    ax.yaxis.get_major_formatter().set_powerlimits((0,1))
+    plt.show()

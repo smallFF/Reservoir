@@ -17,6 +17,7 @@ import json
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 from numba import jit
+from matplotlib.ticker import FuncFormatter
 
 # @jit(cache=True, nopython=True)
 # def FHN(X, t, a, b, c, f):
@@ -441,60 +442,64 @@ if __name__ == '__main__':
     fontdict = {'family': 'DejaVu Sans' ,'size': 10}
     f = 0.13
 
-    # # rho optimal=1.79
-    # rho_set = np.linspace(0.8, 1.9, 20)
-    # rms_error = []
-    # for rho in rho_set:
-    #     model_1 = Model('fhn', init_value=(0, 1.0), 
-    #                     t=(0, 400, 0.01), args=(0.1, 10, 1.0, f),
-    #                     N=400, rho=rho,
-    #                     sigma=1.0, bias=1.0, alpha=0.66, 
-    #                     beta=1e-08, normalize=False)
-    #     # print(model_1)
-    #     input1 = model_1.states[:, [0]].T
-    #     output1 = model_1.states[:, [1]].T
-    #     r1 = Reservoir(input1, output1, model_1)
-    #     r1.train()
-    #     r1.predict(partial=True)
-    #     rms_error.append(r1.RMS_partial)
-    #     # plt.figure()
-    #     # r1.draw(partial=True)
-    # rms_error = np.array(rms_error)
-    # plt.figure()
-    # plt.plot(rho_set, rms_error, 'bo', markersize=3)
-    # plt.errorbar(rho_set, rms_error, yerr=rms_error*0.035)
-    # plt.xlabel(r'$\rho$', fontdict=fontdict)
-    # plt.ylabel('RMS error', fontdict=fontdict)
-    # plt.show()
+    # rho optimal=1.79
+    rho_set = np.linspace(0.8, 1.9, 20)
+    rms_error = []
+    for rho in rho_set:
+        model_1 = Model('fhn', init_value=(0, 1.0), 
+                        t=(0, 400, 0.01), args=(0.1, 10, 1.0, f),
+                        N=400, rho=rho,
+                        sigma=1.0, bias=1.0, alpha=0.66, 
+                        beta=1e-08, normalize=False)
+        # print(model_1)
+        input1 = model_1.states[:, [0]].T
+        output1 = model_1.states[:, [1]].T
+        r1 = Reservoir(input1, output1, model_1)
+        r1.train()
+        r1.predict(partial=True)
+        rms_error.append(r1.RMS_partial)
+        # plt.figure()
+        # r1.draw(partial=True)
+    rms_error = np.array(rms_error)
+    plt.figure()
+    plt.plot(rho_set, rms_error, 'bo', markersize=3)
+    plt.errorbar(rho_set, rms_error, yerr=rms_error*0.035, elinewidth=1, capsize=3)
+    plt.xlabel(r'$\rho$', fontdict=fontdict)
+    plt.ylabel('RMS error', fontdict=fontdict)
+    ax = plt.gca()
+    ax.yaxis.get_major_formatter().set_powerlimits((0,1))
+    plt.show()
     
 
-    # # alpha optimal=0.66
-    # alpha_set = np.linspace(0.01, 1, 20)
-    # par_set = alpha_set
-    # xlabel = r'$\alpha$'
-    # rms_error = []
-    # for par in par_set:
-    #     model_1 = Model('fhn', init_value=(0, 1.0),
-    #                     t=(0, 400, 0.01),
-    #                     args=(0.1, 10, 1.0, f), N=400, rho=1.75,
-    #                     sigma=1.0, bias=1.0, alpha=par,
-    #                     beta=1e-08, normalize=False)
-    #     # print(model_1)
-    #     input1 = model_1.states[:, [0]].T
-    #     output1 = model_1.states[:, [1]].T
-    #     r1 = Reservoir(input1, output1, model_1)
-    #     r1.train()
-    #     r1.predict(partial=True)
-    #     rms_error.append(r1.RMS_partial)
-    #     # plt.figure()
-    #     # r1.draw(partial=True)
-    # rms_error = np.array(rms_error)
-    # plt.figure()
-    # plt.plot(par_set, rms_error, 'bo', markersize=3)
-    # plt.errorbar(par_set, rms_error, yerr=rms_error*0.035)
-    # plt.xlabel(xlabel, fontdict=fontdict)
-    # plt.ylabel('RMS error', fontdict=fontdict)
-    # plt.show()
+    # alpha optimal=0.66
+    alpha_set = np.linspace(0.01, 1, 20)
+    par_set = alpha_set
+    xlabel = r'$\alpha$'
+    rms_error = []
+    for par in par_set:
+        model_1 = Model('fhn', init_value=(0, 1.0),
+                        t=(0, 400, 0.01),
+                        args=(0.1, 10, 1.0, f), N=400, rho=1.75,
+                        sigma=1.0, bias=1.0, alpha=par,
+                        beta=1e-08, normalize=False)
+        # print(model_1)
+        input1 = model_1.states[:, [0]].T
+        output1 = model_1.states[:, [1]].T
+        r1 = Reservoir(input1, output1, model_1)
+        r1.train()
+        r1.predict(partial=True)
+        rms_error.append(r1.RMS_partial)
+        # plt.figure()
+        # r1.draw(partial=True)
+    rms_error = np.array(rms_error)
+    plt.figure()
+    plt.plot(par_set, rms_error, 'bo', markersize=3)
+    plt.errorbar(par_set, rms_error, yerr=rms_error*0.035, elinewidth=1, capsize=3)
+    plt.xlabel(xlabel, fontdict=fontdict)
+    plt.ylabel('RMS error', fontdict=fontdict)
+    ax = plt.gca()
+    ax.yaxis.get_major_formatter().set_powerlimits((0,1))
+    plt.show()
 
     # sigma optimal=1
     sigma_set = np.linspace(0.01, 1.5, 20)
@@ -518,36 +523,41 @@ if __name__ == '__main__':
         # r1.draw(partial=True)
     rms_error = np.array(rms_error)
     plt.figure()
-    plt.plot(par_set, rms_error, 'bo', markersize=3)
-    plt.errorbar(par_set, rms_error, yerr=rms_error*0.035)
+    plt.plot(par_set, rms_error, 'bo', markersize=4)
+    plt.errorbar(par_set, rms_error, yerr=rms_error*0.035, elinewidth=1, capsize=3)
+    plt.plot(par_set, rms_error)
     plt.xlabel(xlabel, fontdict=fontdict)
     plt.ylabel('RMS error', fontdict=fontdict)
+    ax = plt.gca()
+    ax.yaxis.get_major_formatter().set_powerlimits((0,1))
     plt.show()
 
-    # # N optimal=400
-    # N_set = [5*2**i for i in range(1,10)]
-    # par_set = N_set
-    # xlabel = r'$N$'
-    # rms_error = []
-    # for par in par_set:
-    #     model_1 = Model('fhn', init_value=(0, 1.0),
-    #                     t=(0, 400, 0.01),
-    #                     args=(0.1, 10, 1.0, f), N=par, rho=1.75,
-    #                     sigma=1, bias=1.0, alpha=0.66,
-    #                     beta=1e-08, normalize=False)
-    #     # print(model_1)
-    #     input1 = model_1.states[:, [0]].T
-    #     output1 = model_1.states[:, [1]].T
-    #     r1 = Reservoir(input1, output1, model_1)
-    #     r1.train()
-    #     r1.predict(partial=True)
-    #     rms_error.append(r1.RMS_partial)
-    #     # plt.figure()
-    #     # r1.draw(partial=True)
-    # rms_error = np.array(rms_error)
-    # plt.figure()
-    # plt.plot(par_set, rms_error, 'bo', markersize=3)
-    # plt.errorbar(par_set, rms_error, yerr=rms_error*0.035)
-    # plt.xlabel(xlabel, fontdict=fontdict)
-    # plt.ylabel('RMS error', fontdict=fontdict)
-    # plt.show()
+    # N optimal=400
+    N_set = [5*2**i for i in range(1,10)]
+    par_set = N_set
+    xlabel = r'$N$'
+    rms_error = []
+    for par in par_set:
+        model_1 = Model('fhn', init_value=(0, 1.0),
+                        t=(0, 400, 0.01),
+                        args=(0.1, 10, 1.0, f), N=par, rho=1.75,
+                        sigma=1, bias=1.0, alpha=0.66,
+                        beta=1e-08, normalize=False)
+        # print(model_1)
+        input1 = model_1.states[:, [0]].T
+        output1 = model_1.states[:, [1]].T
+        r1 = Reservoir(input1, output1, model_1)
+        r1.train()
+        r1.predict(partial=True)
+        rms_error.append(r1.RMS_partial)
+        # plt.figure()
+        # r1.draw(partial=True)
+    rms_error = np.array(rms_error)
+    plt.figure()
+    plt.plot(par_set, rms_error, 'bo', markersize=3)
+    plt.errorbar(par_set, rms_error, yerr=rms_error*0.035, elinewidth=1, capsize=3)
+    plt.xlabel(xlabel, fontdict=fontdict)
+    plt.ylabel('RMS error', fontdict=fontdict)
+    ax = plt.gca()
+    ax.yaxis.get_major_formatter().set_powerlimits((0,1))
+    plt.show()
