@@ -17,8 +17,6 @@ import json
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 
-def sigmoid(x):
-    return 1/(1+np.exp(-x))
 class Model:
     """
     :functions:
